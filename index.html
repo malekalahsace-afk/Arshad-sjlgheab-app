@@ -2267,25 +2267,29 @@
                 var imgData = canvas.toDataURL("image/png");
                 var jsPDF = window.jspdf.jsPDF;
 
-                // حساب أبعاد الصفحة بصيغة A4 عمودية، مع تحويل أبعاد الصورة لتتناسب مع عرض الصفحة
+                // حساب أبعاد الصفحة بصيغة A4 عمودية، مع ترك هامش موحد بكل الجهات حتى لا يلامس المحتوى أطراف الصفحة
                 var pdf = new jsPDF("p", "mm", "a4");
+                var margin = 10; // هامش بالميليمتر من كل الجهات
                 var pageWidth = pdf.internal.pageSize.getWidth();
                 var pageHeight = pdf.internal.pageSize.getHeight();
-                var imgWidth = pageWidth;
+                var usableWidth = pageWidth - (margin * 2);
+                var usableHeight = pageHeight - (margin * 2);
+
+                var imgWidth = usableWidth;
                 var imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                 var heightLeft = imgHeight;
-                var positionY = 0;
+                var positionY = margin;
 
-                // إذا كان المحتوى أطول من صفحة واحدة، نقسّمه تلقائياً على عدة صفحات PDF
-                pdf.addImage(imgData, "PNG", 0, positionY, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+                // إذا كان المحتوى أطول من صفحة واحدة، نقسّمه تلقائياً على عدة صفحات PDF (مع الحفاظ على نفس الهامش بكل صفحة)
+                pdf.addImage(imgData, "PNG", margin, positionY, imgWidth, imgHeight);
+                heightLeft -= usableHeight;
 
                 while (heightLeft > 0) {
-                    positionY = heightLeft - imgHeight;
+                    positionY = margin - (imgHeight - heightLeft);
                     pdf.addPage();
-                    pdf.addImage(imgData, "PNG", 0, positionY, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
+                    pdf.addImage(imgData, "PNG", margin, positionY, imgWidth, imgHeight);
+                    heightLeft -= usableHeight;
                 }
 
                 pdf.save(fileName + ".pdf");
