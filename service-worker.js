@@ -3,7 +3,7 @@
 
 // رقم نسخة الكاش - مهم جداً: كل مرة تحدّث الكود وترفع نسخة جديدة، يجب تغيير هذا الرقم
 // (مثلاً v1 -> v2) حتى يكتشف التطبيق وجود تحديث ويحمّل النسخة الجديدة.
-const CACHE_VERSION = "v39";
+const CACHE_VERSION = "v40";
 const CACHE_NAME = "attendance-app-" + CACHE_VERSION;
 
 // قائمة كل الملفات الأساسية المطلوبة لعمل التطبيق بدون نت
@@ -30,7 +30,15 @@ const FILES_TO_CACHE = [
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(FILES_TO_CACHE);
+      // نخزن كل ملف لحاله بدل addAll، حتى لو فشل ملف واحد (مثلاً مكتبة خارجية بسبب بطء النت)
+      // لا يوقف تخزين بقية الملفات الأساسية (index.html, manifest, الأيقونات...)
+      return Promise.all(
+        FILES_TO_CACHE.map(function (url) {
+          return cache.add(url).catch(function (err) {
+            console.log("فشل تخزين الملف (تم تجاهله):", url, err);
+          });
+        })
+      );
     })
   );
   self.skipWaiting(); // تفعيل النسخة الجديدة من service worker فوراً دون انتظار إغلاق كل النوافذ المفتوحة
