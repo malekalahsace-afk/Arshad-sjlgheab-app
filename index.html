@@ -1529,9 +1529,9 @@
             }
         }
 
-        // --- تسجيل الخروج: يطلب تأكيداً، ثم يعيد المستخدم لشاشة تسجيل الدخول دون حذف أي بيانات ---
+        // --- تسجيل الخروج: يطلب تأكيداً، ثم يغلق/يخرج من التطبيق نهائياً دون العودة لشاشة تسجيل الدخول ---
         function confirmLogout() {
-            // إغلاق القائمة الجانبية أولاً حتى لا تبقى مفتوحة فوق شاشة تسجيل الدخول
+            // إغلاق القائمة الجانبية أولاً
             document.getElementById("sidebar").classList.remove("active");
             document.getElementById("sidebarOverlay").classList.remove("active");
 
@@ -1542,17 +1542,25 @@
             isLoggedIn = false;
             localStorage.removeItem("isLoggedInSession"); // مسح الجلسة المحفوظة فعلياً، حتى لا يُعاد فتح التطبيق تلقائياً بعد الخروج
 
+            // إخفاء كل واجهات التطبيق (اللوحة الرئيسية وشاشة تسجيل الدخول) واستبدالها برسالة خروج
             document.getElementById("mainDashboard").style.display = "none";
-            document.getElementById("loginScreen").style.display = "block";
-            document.body.style.alignItems = "center";
-            document.body.style.paddingTop = "0";
+            document.getElementById("loginScreen").style.display = "none";
 
-            // تفريغ حقول تسجيل الدخول حتى لا تبقى كلمة السر القديمة ظاهرة بالحقل
-            document.getElementById("username").value = "";
-            document.getElementById("password").value = "";
+            document.body.innerHTML =
+                '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;background:#121212;color:#fff;font-family:inherit;">' +
+                '<div style="font-size:60px;margin-bottom:20px;">👋</div>' +
+                '<h2 style="margin-bottom:10px;">تم تسجيل الخروج</h2>' +
+                '<p style="opacity:.8;">يمكنك الآن إغلاق التطبيق</p>' +
+                '</div>';
 
-            // إعادة سجل الـ history لحالته الأولى، حتى لا يبقى أي أثر لصفحات سابقة بعد الخروج
-            history.replaceState({ page: 'login' }, '');
+            // محاولة إغلاق النافذة/التطبيق فعلياً (تنجح فقط إذا كانت هذه أول وآخر صفحة بسجل المتصفح)
+            window.close();
+
+            // في حال لم تُغلق النافذة (بعض المتصفحات تمنع الإغلاق البرمجي)، نمنع الرجوع لأي صفحة سابقة داخل التطبيق
+            history.pushState(null, '', location.href);
+            window.onpopstate = function () {
+                history.pushState(null, '', location.href);
+            };
         }
 
         function toggleSidebar() {
